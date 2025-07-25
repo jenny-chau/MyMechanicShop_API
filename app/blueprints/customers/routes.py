@@ -1,0 +1,86 @@
+from flask import request, jsonify
+from marshmallow import ValidationError
+from sqlalchemy import select
+from .schemas import customer_schema, customers_schema
+from app.models import Customer, db
+from . import customers_bp
+
+# POST '/' : Creates a new Customer
+@customers_bp.route("/", methods=["POST"])
+def create_customer():
+    try:
+        customer_data = customer_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    query = select(Customer).where(Customer.email == customer_data['email'])
+    existing_customer = db.session.execute(query).scalars().all()
+    if existing_customer:
+        return jsonify({"error": "Customer exists already"}), 400
+    
+    new_customer = Customer(**customer_data)
+    db.session.add(new_customer)
+    db.session.commit()
+    
+    return customer_schema.jsonify(new_customer), 201
+
+# GET '/' : Gets all customers
+@customers_bp.route("/", methods=["GET"])
+def get_all_customers():
+    query = select(Customer)
+    customers = db.session.execute(query).scalars().all()
+    return customers_schema.jsonify(customers), 200
+
+# GET '/<customer_id>' : Gets specific customer based on id
+@customers_bp.route("/<int:customer_id>", methods=["GET"])
+def get_customer(customer_id):
+    customer = db.session.get(Customer, customer_id)
+    
+    if customer:
+        return customer_schema.jsonify(customer), 200
+    return jsonify({"error": "Customer not found"}), 404
+
+# PUT '/<customer_id>' : Updates customer data
+@customers_bp.route("/<int:customer_id>", methods=["PUT"])
+def update_customer(customer_id):
+    customer = db.session.get(Customer, customer_id)
+    
+    if not customer:
+        return jsonify({"error":"Customer not found"}), 404
+        
+    try:
+        customer_data = customer_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    # Check if email is being used already
+    query = select(Customer).where(Customer.email == customer_data["email"])
+    existing_email = db.session.execute(query).scalars().all()
+    
+    # Error only if email exists and belongs to another customer_id
+    if existing_email and customer.id != customer_id:
+        return jsonify({"error": "email already exists. Please use another email."}), 400
+    
+    # Update customer entry
+    for key, value in customer_data.items():
+        setattr(customer, key, value)
+    
+    db.session.commit()
+    return customer_schema.jsonify(customer), 200
+
+# DELETE '/<customer_id>' : Delete customer based on customer id
+@customers_bp.route("/<int:customer_id>", methods=["DELETE"])
+def delete_customer(customer_id):
+    customer = db.session.get(Customer, customer_id)
+    
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 404
+    
+    # Check if customer has tickets associated. If so, do not delete.
+    if customer.tickets:
+        return jsonify({"error":"unable to delete customer due to associated service ticket records"}), 400
+    
+    db.session.delete(customer)
+    db.session.commit()
+    
+    return jsonify({"message": "Customer successfully deleted"}), 200
