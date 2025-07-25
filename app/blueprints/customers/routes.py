@@ -58,7 +58,7 @@ def update_customer(customer_id):
     existing_email = db.session.execute(query).scalars().all()
     
     # Error only if email exists and belongs to another customer_id
-    if existing_email and customer.id != customer_id:
+    if existing_email and customer not in existing_email:
         return jsonify({"error": "email already exists. Please use another email."}), 400
     
     # Update customer entry

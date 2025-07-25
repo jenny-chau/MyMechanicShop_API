@@ -53,11 +53,18 @@ def remove_mechanic(ticket_id, mechanic_id):
     ticket = db.session.get(ServiceTicket, ticket_id)
     mechanic = db.session.get(Mechanic, mechanic_id)
     
+    # Check if ticket or mechanic exists
     if not ticket or not mechanic:
         return jsonify({"error":"Service ticket or mechanic are not found"}), 404
     
+    # Check if mechanic is assigned to ticket
+    if mechanic not in ticket.mechanics:
+        return jsonify({"error": "Mechanic not currently assigned to ticket"}), 400
+    
+    # Remove Mechanic from Ticket
     ticket.mechanics.remove(mechanic)    
     db.session.commit()
+    
     return jsonify({"message":f"Mechanic successfully removed from Service Ticket #{ticket.id}"}), 200
 
 # GET '/': Retrieves all service tickets.

@@ -18,7 +18,7 @@ def add_mechanic():
     existing_mechanic = db.session.execute(query).scalars().all()
     
     if existing_mechanic:
-        return jsonify({"error": "Mechanic exists already"}), 400
+        return jsonify({"error": "Email already registered"}), 400
     
     #create new mechanic
     new_mechanic = Mechanic(**mechanic)
@@ -53,7 +53,7 @@ def update_mechanic(id):
     query = select(Mechanic).where(Mechanic.email == updates['email'])
     existing_mechanic = db.session.execute(query).scalars().all()
     
-    if existing_mechanic and mechanic.id != id:
+    if existing_mechanic and mechanic not in existing_mechanic:
         return jsonify({"error":"Duplicate email. Please use another email."}), 400
     
     #update mechanic
@@ -64,7 +64,7 @@ def update_mechanic(id):
     return mechanic_schema.jsonify(mechanic), 200
     
 
-# DELETE '/<int:id': Deletes a specific Mechanic based on the id passed in through the url.
+# DELETE '/<int:id'>: Deletes a specific Mechanic based on the id passed in through the url.
 @mechanics_bp.route("/<int:id>", methods=["DELETE"])
 def delete_mechanic(id):
     mechanic = db.session.get(Mechanic, id)
