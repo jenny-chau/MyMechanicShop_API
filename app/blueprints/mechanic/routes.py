@@ -78,3 +78,14 @@ def delete_mechanic(id):
     db.session.commit()
     
     return jsonify({"message": "Mechanic deleted"}), 200
+
+
+# GET '/ranked' : rank mechanics based on most service tickets worked on
+@mechanics_bp.route('/ranked', methods=['GET'])
+def ranked_mechanics():
+    query = select(Mechanic)
+    mechanics = db.session.execute(query).scalars().all()
+    
+    mechanics.sort(key = lambda mechanic : len(mechanic.tickets), reverse = True)
+    
+    return mechanics_schema.jsonify(mechanics), 200
