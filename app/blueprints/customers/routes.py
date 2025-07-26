@@ -1,12 +1,45 @@
 from flask import request, jsonify
 from marshmallow import ValidationError
 from sqlalchemy import select
-from .schemas import customer_schema, customers_schema
+from .schemas import customer_schema, customers_schema, login_schema
+from app.blueprints.service_ticket.schemas import service_tickets_schema
 from app.models import Customer, db
+from app.extensions import limiter, cache
 from . import customers_bp
+from app.utils.util import encode_token, token_required
+
+# POST '/login' : Customer login
+@customers_bp.route('/login', methods=['POST'])
+def customer_login():
+    try:
+        credentials = login_schema.load(request.json)
+        username = credentials['email']
+        password = credentials['password']
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    query = select(Customer).where(Customer.email == username)
+    customer = db.session.execute(query).scalar_one_or_none()
+    
+    if customer and customer.password == password:
+        auth_token = encode_token(customer.id)
+        
+        response = {
+            'status': 'Success',
+            'message': 'Successfully logged in',
+            'auth_token': auth_token
+        }
+        
+        return jsonify(response), 200
+    
+    else:
+        return jsonify({'error':'Invalid username or password'}), 400
+    
+    
 
 # POST '/' : Creates a new Customer
 @customers_bp.route("/", methods=["POST"])
+@limiter.limit("3 per hour") # Prevent too many customers from being made
 def create_customer():
     try:
         customer_data = customer_schema.load(request.json)
@@ -26,6 +59,7 @@ def create_customer():
 
 # GET '/' : Gets all customers
 @customers_bp.route("/", methods=["GET"])
+@cache.cached(timeout=60) # Cache customer data for 1 min
 def get_all_customers():
     query = select(Customer)
     customers = db.session.execute(query).scalars().all()
@@ -40,8 +74,10 @@ def get_customer(customer_id):
         return customer_schema.jsonify(customer), 200
     return jsonify({"error": "Customer not found"}), 404
 
-# PUT '/<customer_id>' : Updates customer data
-@customers_bp.route("/<int:customer_id>", methods=["PUT"])
+# PUT '/' : Updates customer data
+@customers_bp.route("/", methods=["PUT"])
+@limiter.limit("3 per day") # Prevent customers from updating their information too many times
+@token_required # Require login to update customer info
 def update_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     
@@ -68,8 +104,9 @@ def update_customer(customer_id):
     db.session.commit()
     return customer_schema.jsonify(customer), 200
 
-# DELETE '/<customer_id>' : Delete customer based on customer id
-@customers_bp.route("/<int:customer_id>", methods=["DELETE"])
+# DELETE '' : Delete customer based on customer id
+@customers_bp.route("/", methods=["DELETE"])
+@token_required # require customer login to delete account
 def delete_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     
@@ -84,3 +121,17 @@ def delete_customer(customer_id):
     db.session.commit()
     
     return jsonify({"message": "Customer successfully deleted"}), 200
+
+
+# GET '/my-tickets' : Get all service tickets associated with customer
+@customers_bp.route('/my-tickets', methods=['GET'])
+@token_required
+def get_tickets(customer_id):
+    customer = db.session.get(Customer, customer_id)
+    
+    if not customer:
+        return jsonify({'error':'customer not found'}), 404
+    
+    return service_tickets_schema.jsonify(customer.tickets), 200
+    
+    

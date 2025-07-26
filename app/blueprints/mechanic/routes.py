@@ -4,9 +4,11 @@ from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import Mechanic, db, ServiceTicket
 from sqlalchemy import select
+from app.extensions import limiter, cache
 
 # POST '/' : Creates a new Mechanic
 @mechanics_bp.route("/", methods=["POST"])
+@limiter.limit("3 per hour") # limit creation of mechanics
 def add_mechanic():
     try:
         mechanic = mechanic_schema.load(request.json)
@@ -30,6 +32,7 @@ def add_mechanic():
 
 # GET '/': Retrieves all Mechanics
 @mechanics_bp.route("/", methods=["GET"])
+@cache.cached(timeout=60) # Cache all mechanics info for 1 min
 def get_mechanics():
     query = select(Mechanic)
     

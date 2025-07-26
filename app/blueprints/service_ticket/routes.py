@@ -4,13 +4,13 @@ from flask import request, jsonify
 from sqlalchemy import select
 from marshmallow import ValidationError
 from app.models import ServiceTicket, db, Customer, Mechanic
+from app.extensions import cache
 
 
 # POST '/': Pass in all the required information to create the service_ticket.
 @service_ticket_bp.route("/", methods=["POST"])
 def create_service_ticket():
     try:
-        print(service_ticket_schema.fields)
         ticket = service_ticket_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
@@ -69,6 +69,7 @@ def remove_mechanic(ticket_id, mechanic_id):
 
 # GET '/': Retrieves all service tickets.
 @service_ticket_bp.route("/", methods=["GET"])
+@cache.cached(timeout=60) # Cache all service ticket information for 1 min
 def get_tickets():
     query = select(ServiceTicket)
     tickets = db.session.execute(query).scalars().all()
