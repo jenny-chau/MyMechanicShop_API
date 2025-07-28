@@ -6,7 +6,7 @@ from app.blueprints.service_ticket.schemas import service_tickets_schema
 from app.models import Customer, db
 from app.extensions import limiter, cache
 from . import customers_bp
-from app.utils.util import encode_token, token_required
+from app.utils.util import encode_token, token_required_customer
 
 # POST '/login' : Customer login
 @customers_bp.route('/login', methods=['POST'])
@@ -22,7 +22,7 @@ def customer_login():
     customer = db.session.execute(query).scalar_one_or_none()
     
     if customer and customer.password == password:
-        auth_token = encode_token(customer.id)
+        auth_token = encode_token(customer.id, "customer")
         
         response = {
             'status': 'Success',
@@ -33,7 +33,7 @@ def customer_login():
         return jsonify(response), 200
     
     else:
-        return jsonify({'error':'Invalid username or password'}), 400
+        return jsonify({'error':'Invalid username or password'}), 401
     
     
 
@@ -57,9 +57,9 @@ def create_customer():
     
     return customer_schema.jsonify(new_customer), 201
 
-# GET '/' : Gets all customers
+# GET '/' : Gets all customers (can be paginated)
 @customers_bp.route("/", methods=["GET"])
-# @cache.cached(timeout=60) # Cache customer data for 1 min
+@cache.cached(timeout=60) # Cache customer data for 1 min
 def get_all_customers():
     try:
         page = int(request.args.get('page'))
@@ -86,7 +86,7 @@ def get_customer(customer_id):
 # PUT '/' : Updates customer data
 @customers_bp.route("/", methods=["PUT"])
 @limiter.limit("3 per day") # Prevent customers from updating their information too many times
-@token_required # Require login to update customer info
+@token_required_customer # Require login to update customer info
 def update_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     
@@ -115,7 +115,7 @@ def update_customer(customer_id):
 
 # DELETE '' : Delete customer based on customer id
 @customers_bp.route("/", methods=["DELETE"])
-@token_required # require customer login to delete account
+@token_required_customer # require customer login to delete account
 def delete_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     
@@ -134,7 +134,7 @@ def delete_customer(customer_id):
 
 # GET '/my-tickets' : Get all service tickets associated with customer
 @customers_bp.route('/my-tickets', methods=['GET'])
-@token_required
+@token_required_customer
 def get_tickets(customer_id):
     customer = db.session.get(Customer, customer_id)
     

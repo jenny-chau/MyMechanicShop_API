@@ -7,8 +7,8 @@ class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     mechanics = fields.Nested('MechanicSchema', many=True)
     class Meta:
         model = ServiceTicket
-        fields = ('id', 'VIN', 'service_date', 'service_desc', 'customer_id', 'customer', 'mechanics')
-        include_fk = True # Allows input of customer id
+        include_relationships = True
+        include_fk = True 
         
 class EditServiceTicket(ma.Schema):
     add_mechanic_ids = fields.List(fields.Int(), required=True)

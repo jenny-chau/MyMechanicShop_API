@@ -6,18 +6,19 @@ import jose
 
 SECRET_KEY = 'DiN0SaUr'
 
-def encode_token(customer_id):
+def encode_token(customer_id, customer_or_mechanic):
     payload = {
         'exp': datetime.now(timezone.utc) + timedelta(days=0, hours=1),
         'iat': datetime.now(timezone.utc),
-        'sub': str(customer_id)
+        'sub': str(customer_id),
+        'type': str(customer_or_mechanic)
     }
     
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     
     return token
 
-def token_required(f):
+def token_required_customer(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
@@ -32,6 +33,9 @@ def token_required(f):
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
             customer_id = data['sub']
+            customer_or_mechanic = data['type']
+            if customer_or_mechanic != 'customer':
+                raise jose.exceptions.JWTError
         except jose.exceptions.ExpiredSignatureError:
             return jsonify({'error': 'token has expired'}), 401
         except jose.exceptions.JWTError:
@@ -39,4 +43,29 @@ def token_required(f):
         
         return f(customer_id, *args, **kwargs)
     
+    return decorated
+
+def token_required_mechanic(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(' ')[1]
+            
+        if not token:
+            return jsonify({"error":'Token not found'}), 401
+        
+        try:
+            data=jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            mechanic_id = data['sub']
+            customer_or_mechanic = data['type']
+            if customer_or_mechanic != 'mechanic':
+                raise jose.exceptions.JWTError
+        except jose.exceptions.ExpiredSignatureError:
+            return jsonify({'error':'token has expired'}), 401
+        except jose.exceptions.JWTError:
+            return jsonify({'error':'Invalid token'}), 401
+        
+        return f(mechanic_id, *args, **kwargs)
     return decorated

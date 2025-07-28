@@ -1,10 +1,37 @@
 from . import mechanics_bp
-from .schemas import mechanic_schema, mechanics_schema
+from .schemas import mechanic_schema, mechanics_schema, login_schema
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import Mechanic, db, ServiceTicket
 from sqlalchemy import select
 from app.extensions import limiter, cache
+from app.utils.util import encode_token, token_required_mechanic
+
+# POST '/login' : Customer login
+@mechanics_bp.route('/login', methods=['POST'])
+def login():
+    try:
+        data = login_schema.load(request.json)
+        username = data['email']
+        password = data['password']
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    query = select(Mechanic).where(Mechanic.email == username)
+    mechanic = db.session.execute(query).scalar_one_or_none()
+    
+    if mechanic and mechanic.password == password:
+        token = encode_token(mechanic.id, 'mechanic')
+        
+        response = {
+            'status': 'Success',
+            'message': 'Successfully logged in',
+            'token': token
+        }
+        
+        return jsonify(response), 200
+    else:
+        return jsonify({'error':'Inavlid username or password'}), 401
 
 # POST '/' : Creates a new Mechanic
 @mechanics_bp.route("/", methods=["POST"])
@@ -39,8 +66,9 @@ def get_mechanics():
     mechanics = db.session.execute(query).scalars().all()
     return mechanics_schema.jsonify(mechanics), 200
 
-# PUT '/<int:id>':  Updates a specific Mechanic based on the id passed in through the url.
-@mechanics_bp.route("/<int:id>", methods=["PUT"])
+# PUT '/':  Updates a specific Mechanic based on the id passed in through the url.
+@mechanics_bp.route("/", methods=["PUT"])
+@token_required_mechanic
 def update_mechanic(id):
     mechanic = db.session.get(Mechanic, id)
 
@@ -67,8 +95,9 @@ def update_mechanic(id):
     return mechanic_schema.jsonify(mechanic), 200
     
 
-# DELETE '/<int:id'>: Deletes a specific Mechanic based on the id passed in through the url.
-@mechanics_bp.route("/<int:id>", methods=["DELETE"])
+# DELETE '/': Deletes a specific Mechanic based on the id passed in through the url.
+@mechanics_bp.route("/", methods=["DELETE"])
+@token_required_mechanic
 def delete_mechanic(id):
     mechanic = db.session.get(Mechanic, id)
     if not mechanic:
