@@ -113,7 +113,7 @@ def update_customer(customer_id):
     db.session.commit()
     return customer_schema.jsonify(customer), 200
 
-# DELETE '' : Delete customer based on customer id
+# DELETE '' : Delete customer based on customer id (and all their service tickets)
 @customers_bp.route("/", methods=["DELETE"])
 @token_required_customer # require customer login to delete account
 def delete_customer(customer_id):
@@ -121,11 +121,7 @@ def delete_customer(customer_id):
     
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
-    
-    # Check if customer has tickets associated. If so, do not delete.
-    if customer.tickets:
-        return jsonify({"error":"unable to delete customer due to associated service ticket records"}), 400
-    
+        
     db.session.delete(customer)
     db.session.commit()
     

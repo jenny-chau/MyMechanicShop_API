@@ -24,7 +24,7 @@ class Customer(Base):
     phone: Mapped[str] = mapped_column(db.String(255), nullable=False)
     password: Mapped[str] = mapped_column(db.String(255), nullable=False)
     
-    tickets: Mapped[List['ServiceTicket']] = db.relationship(back_populates='customer')
+    tickets: Mapped[List['ServiceTicket']] = db.relationship(back_populates='customer', cascade='all, delete') # If customer gets deleted, delete all service tickets associated with customer
     
 class ServiceTicket(Base):
     __tablename__ = "service_tickets"
@@ -37,6 +37,7 @@ class ServiceTicket(Base):
     
     customer: Mapped['Customer'] = db.relationship(back_populates='tickets')
     mechanics: Mapped[List['Mechanic']] = db.relationship(secondary=service_mechanics, back_populates='tickets')
+    items: Mapped[List['InventoryServiceTicket']] = db.relationship(back_populates="tickets", cascade='all, delete')
     
 class Mechanic(Base):
     __tablename__ = "mechanics"
@@ -50,4 +51,22 @@ class Mechanic(Base):
     
     tickets: Mapped[List['ServiceTicket']] = db.relationship(secondary=service_mechanics, back_populates='mechanics')
     
+class Inventory(Base):
+    __tablename__ = 'inventory'
     
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(db.String(255), nullable=False)
+    price: Mapped[float]
+    
+    service_tickets: Mapped[List['InventoryServiceTicket']] = db.relationship(back_populates='item', cascade='all, delete') # If item is deleted, entries in the 'InventoryServiceTicket' table will be deleted too
+    
+class InventoryServiceTicket(Base):
+    __tablename__ = 'inventory_service_ticket'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quantity: Mapped[int] = mapped_column(nullable = False)
+    inventory_id: Mapped[int] = mapped_column(db.ForeignKey("inventory.id"), nullable = False)
+    service_ticket_id: Mapped[int] = mapped_column(db.ForeignKey("service_tickets.id"), nullable = False)
+    
+    item: Mapped['Inventory'] = db.relationship(back_populates = 'service_tickets')
+    tickets: Mapped['ServiceTicket'] = db.relationship(back_populates = 'items')
