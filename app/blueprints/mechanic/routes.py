@@ -66,7 +66,7 @@ def get_mechanics():
     mechanics = db.session.execute(query).scalars().all()
     return mechanics_schema.jsonify(mechanics), 200
 
-# PUT '/':  Updates a specific Mechanic based on the id passed in through the url.
+# PUT '/':  Update Mechanic
 @mechanics_bp.route("/", methods=["PUT"])
 @token_required_mechanic
 def update_mechanic(id):
@@ -95,7 +95,7 @@ def update_mechanic(id):
     return mechanic_schema.jsonify(mechanic), 200
     
 
-# DELETE '/': Deletes a specific Mechanic based on the id passed in through the url.
+# DELETE '/': Delete mechanic
 @mechanics_bp.route("/", methods=["DELETE"])
 @token_required_mechanic
 def delete_mechanic(id):

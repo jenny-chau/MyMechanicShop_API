@@ -5,11 +5,12 @@
 
 ## Programming Languages, Frameworks, Tools
 - Python
-- Flask
+- Flask (limiter, caching, blueprints)
 - SQLAlchemy
 - Marshmallow
 - MySQL
 - Postman (API testing)
+- JWT tokens using python-jose package
 - Organized with Application Factory Pattern
 
 ## Models
@@ -27,26 +28,42 @@
     - Email (must be unique)
     - Phone
     - Salary
+- Inventory
+    - Item name
+    - Item price
 - One-to-Many relationship between Customer and Service Ticket
 - Many-to-Many relationship between Service Ticket and Mechanic (using service_mechanics association table)
+- Many-to-Many relationship betwen Inventory items and Service ticket using a model that also stores quantity of item
 
 ## RESTful endpoints
 - Customer routes
-    - POST '/' : Creates a new Customer
-    - GET '/' : Gets all customers
-    - GET '/<customer_id>' : Gets specific customer based on id
-    - PUT '/<customer_id>' : Updates customer data
-    - DELETE '/<customer_id>' : Delete customer based on customer id
+    - POST '/customers/login' : Customer login
+    - POST '/customers/' : Creates a new Customer
+    - GET '/customers/' : Gets all customers (can be paginated using query parameters)
+    - GET '/customers/<customer_id>' : Gets specific customer based on id
+    - PUT '/customers/' : Updates customer data (login required)
+    - DELETE '/customers/' : Delete customer based on customer id (login required)
+    - GET '/customers/my-tickets' : Gets all service tickets associated with customer (login required)
 - Service Ticket routes
-    - POST '/': Pass in all the required information to create the service_ticket.
-    - PUT '/<ticket_id>/assign-mechanic/<mechanic-id>: Adds a relationship between a service ticket and the mechanics.
-    - PUT '/<ticket_id>/remove-mechanic/<mechanic-id>: Removes the relationship from the service ticket and the mechanic.
-    - GET '/': Retrieves all service tickets.
+    - POST '/serviceticket/': Pass in all the required information to create the service_ticket.
+    - PUT '/serviceticket/<ticket_id>/assign-mechanic: Adds a relationship between a service ticket and the mechanics. (mechanic login required)
+    - PUT '/serviceticket/<ticket_id>/remove-mechanic: Removes the relationship from the service ticket and the mechanic. (mechanic login required)
+    - GET '/serviceticket/': Retrieves all service tickets.
+    - PUT '/serviceticket/<ticket_id>/edit' : Add/removes mechanics from service ticket. Takes in 'remove_ids', and 'add_ids'. Logged in mechanic may add/remove other mechanics by their ids passed in. (mechanic login required)
+    - PUT '/serviceticket/add_items' : Add item to service ticket (mechanic login required)
 - Mechanic routes
-    - POST '/' : Creates a new Mechanic
-    - GET '/': Retrieves all Mechanics
-    - PUT '/<int:id>':  Updates a specific Mechanic based on the id passed in through the url.
-    - DELETE '/<int:id'>: Deletes a specific Mechanic based on the id passed in through the url.
+    - POST '/mechanics/login' : Mechanic login
+    - POST '/mechanics/' : Creates a new Mechanic
+    - GET '/mechanics/': Retrieves all Mechanics (mechanic data excludes password and salary)
+    - PUT '/mechanics/':  Update Mechanic
+    - DELETE '/mechanics/': Delete mechanic
+    - GET '/mechanics/ranked' : rank mechanics based on most service tickets worked on (mechanic data excludes password and salary)
+- Inventory routes
+    - POST '/inventory/' : create item (mechanic login required)
+    - GET '/inventory/' : get all items
+    - GET '/inventory/<item_id> : get item by id
+    - PUT '/inventory/<item_id> : update item (mechanic login required)
+    - DELETE '/inventory/<item_id>' : delete item (and all instances of this item in service tickets) (mechanic login required)
 
 ## Getting Started
 1. Clone this Github repository
