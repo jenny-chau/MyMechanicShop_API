@@ -37,7 +37,7 @@ class ServiceTicket(Base):
     
     customer: Mapped['Customer'] = db.relationship(back_populates='tickets')
     mechanics: Mapped[List['Mechanic']] = db.relationship(secondary=service_mechanics, back_populates='tickets')
-    items: Mapped[List['InventoryServiceTicket']] = db.relationship(back_populates="tickets", cascade='all, delete')
+    items: Mapped[List['InventoryServiceTicket']] = db.relationship(back_populates="tickets", cascade='all, delete') # If ticket is deleted, entries in the 'InventoryServiceTicket' table will be deleted too
     
 class Mechanic(Base):
     __tablename__ = "mechanics"

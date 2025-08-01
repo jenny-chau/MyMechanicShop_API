@@ -2,12 +2,12 @@ from . import mechanics_bp
 from .schemas import mechanic_schema, mechanics_schema, login_schema
 from flask import request, jsonify
 from marshmallow import ValidationError
-from app.models import Mechanic, db, ServiceTicket
+from app.models import Mechanic, db
 from sqlalchemy import select
 from app.extensions import limiter, cache
 from app.utils.util import encode_token, token_required_mechanic
 
-# POST '/login' : Customer login
+# POST '/login' : Mechanic login
 @mechanics_bp.route('/login', methods=['POST'])
 def login():
     try:
@@ -35,7 +35,7 @@ def login():
 
 # POST '/' : Creates a new Mechanic
 @mechanics_bp.route("/", methods=["POST"])
-@limiter.limit("3 per hour") # limit creation of mechanics
+@limiter.limit("10 per hour") # limit creation of mechanics
 def add_mechanic():
     try:
         mechanic = mechanic_schema.load(request.json)
@@ -57,7 +57,7 @@ def add_mechanic():
     return mechanic_schema.jsonify(new_mechanic), 201
 
 
-# GET '/': Retrieves all Mechanics
+# GET '/': Retrieves all Mechanics (mechanic data excludes password and salary)
 @mechanics_bp.route("/", methods=["GET"])
 @cache.cached(timeout=60) # Cache all mechanics info for 1 min
 def get_mechanics():
@@ -109,7 +109,7 @@ def delete_mechanic(id):
     return jsonify({"message": "Mechanic deleted"}), 200
 
 
-# GET '/ranked' : rank mechanics based on most service tickets worked on
+# GET '/ranked' : rank mechanics based on most service tickets worked on (mechanic data excludes password and salary)
 @mechanics_bp.route('/ranked', methods=['GET'])
 def ranked_mechanics():
     query = select(Mechanic)

@@ -6,6 +6,7 @@ import jose
 
 SECRET_KEY = 'DiN0SaUr'
 
+# Encode token when customer or mechanic logs in. Encodes extra piece of information for whether they are customer or mechanic.
 def encode_token(customer_id, customer_or_mechanic):
     payload = {
         'exp': datetime.now(timezone.utc) + timedelta(days=0, hours=1),
@@ -18,6 +19,7 @@ def encode_token(customer_id, customer_or_mechanic):
     
     return token
 
+# Verify customer token
 def token_required_customer(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -45,6 +47,7 @@ def token_required_customer(f):
     
     return decorated
 
+# Verify mechanic token
 def token_required_mechanic(f):
     @wraps(f)
     def decorated(*args, **kwargs):

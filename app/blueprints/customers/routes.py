@@ -57,7 +57,7 @@ def create_customer():
     
     return customer_schema.jsonify(new_customer), 201
 
-# GET '/' : Gets all customers (can be paginated)
+# GET '/' : Gets all customers (can be paginated), customer data excludes passwords
 @customers_bp.route("/", methods=["GET"])
 @cache.cached(timeout=60) # Cache customer data for 1 min
 def get_all_customers():
@@ -65,7 +65,7 @@ def get_all_customers():
         page = int(request.args.get('page'))
         per_page = int(request.args.get('per_page'))
         query = select(Customer)
-        customers = db.paginate(query, page=page, per_page=per_page)
+        customers = db.paginate(query, page=page, per_page=per_page) # If page doesn't exist or error in inputs, exception will be run
         return customers_schema.jsonify(customers), 200
     except:
         query = select(Customer)
@@ -74,7 +74,7 @@ def get_all_customers():
         
     
 
-# GET '/<customer_id>' : Gets specific customer based on id
+# GET '/<customer_id>' : Gets specific customer based on id (log in not required)
 @customers_bp.route("/<int:customer_id>", methods=["GET"])
 def get_customer(customer_id):
     customer = db.session.get(Customer, customer_id)

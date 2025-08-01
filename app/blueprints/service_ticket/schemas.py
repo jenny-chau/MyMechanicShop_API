@@ -19,8 +19,8 @@ class EditServiceTicket(ma.Schema):
         
 class AddItems(ma.Schema):
     # Service Ticket ID
-    # list of item, quantity
     ticket_id = fields.Int(required=True)
+    # list of item, quantity
     item_quant = fields.Nested("ItemQuantSchema", many=True)
     
 class ItemQuantSchema(ma.Schema):
@@ -37,4 +37,3 @@ service_ticket_schema = ServiceTicketSchema()
 service_tickets_schema = ServiceTicketSchema(many=True)
 edit_service_ticket_schema = EditServiceTicket()
 add_items_schema = AddItems()
-inventory_service_ticket_schema = InventoryServiceTicketSchema()

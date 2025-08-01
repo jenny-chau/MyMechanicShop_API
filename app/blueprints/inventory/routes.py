@@ -3,18 +3,24 @@ from .schemas import inventory_schema, inventories_schema
 from flask import request, jsonify
 from sqlalchemy import select
 from marshmallow import ValidationError
-from app.models import Inventory, db
+from app.models import Inventory, db, Mechanic
 from app.utils.util import token_required_mechanic
 
 # POST '/' : create item
 @inventory_db.route("/", methods=["POST"])
 @token_required_mechanic
 def create_item(mechanic_id):
+    # Verify mechanic exists
+    mechanic = db.session.get(Mechanic, mechanic_id)
+    if not mechanic:
+        return jsonify({'error': 'Unauthorized Access'}), 400
+    
+    #  Load data from client side
     try:
         data = inventory_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
-    
+
     # Find exact same item in inventory list
     query = select(Inventory).where(Inventory.name == data['name'] and Inventory.price == data['price'])
     item = db.session.execute(query).scalars().all()
@@ -51,6 +57,11 @@ def get_item(item_id):
 @inventory_db.route('/<int:item_id>', methods=["PUT"])
 @token_required_mechanic
 def update_item(mechanic_id, item_id):
+    # Verify mechanic exists
+    mechanic = db.session.get(Mechanic, mechanic_id)
+    if not mechanic:
+        return jsonify({'error': 'Unauthorized Access'}), 400
+    
     # Load and validate data
     try:
         data = inventory_schema.load(request.json)
@@ -76,8 +87,13 @@ def update_item(mechanic_id, item_id):
 @inventory_db.route('/<int:item_id>', methods=['DELETE'])
 @token_required_mechanic
 def delete_item(mechanic_id, item_id):
-    item = db.session.get(Inventory, item_id)
+    # Verify mechanic exists
+    mechanic = db.session.get(Mechanic, mechanic_id)
+    if not mechanic:
+        return jsonify({'error': 'Unauthorized Access'}), 400
     
+    #  Get item
+    item = db.session.get(Inventory, item_id)
     if not item:
         return jsonify({'error':'Item not found'}), 404
     
