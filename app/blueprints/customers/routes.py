@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from marshmallow import ValidationError
 from sqlalchemy import select
-from .schemas import customer_schema, customers_schema, login_schema
+from .schemas import customer_schema, customers_schema, login_schema, customer_schema_no_password
 from app.blueprints.service_ticket.schemas import service_tickets_schema
 from app.models import Customer, db
 from app.extensions import limiter, cache
@@ -80,7 +80,7 @@ def get_customer(customer_id):
     customer = db.session.get(Customer, customer_id)
     
     if customer:
-        return customer_schema.jsonify(customer), 200
+        return customer_schema_no_password.jsonify(customer), 200
     return jsonify({"error": "Customer not found"}), 404
 
 # PUT '/' : Updates customer data
@@ -113,7 +113,7 @@ def update_customer(customer_id):
     db.session.commit()
     return customer_schema.jsonify(customer), 200
 
-# DELETE '' : Delete customer based on customer id (and all their service tickets)
+# DELETE '/' : Delete customer based on customer id (and all their service tickets)
 @customers_bp.route("/", methods=["DELETE"])
 @token_required_customer # require customer login to delete account
 def delete_customer(customer_id):

@@ -6,25 +6,26 @@ from marshmallow import ValidationError
 from app.models import ServiceTicket, db, Customer, Mechanic, Inventory, InventoryServiceTicket
 from app.extensions import cache
 from app.extensions import limiter
-from app.utils.util import token_required_mechanic
+from app.utils.util import token_required_mechanic, token_required_customer
 
 
 # POST '/': Pass in all the required information to create the service_ticket.
 @service_ticket_bp.route("/", methods=["POST"])
 @limiter.limit('20 per hour') # Prevent too many service tickets from being created at once
-def create_service_ticket():
+@token_required_customer #required customer log in to submit a service request
+def create_service_ticket(customer_id):
     try:
         ticket = service_ticket_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
 
-    customer_id = ticket.get("customer_id")
     customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"error":"Customer not found"}), 404
     
-    new_ticket = ServiceTicket(**ticket)
+    new_ticket = ServiceTicket(**ticket, customer_id=customer.id)
     db.session.add(new_ticket)
+    customer.tickets.append(new_ticket)
     db.session.commit()
     
     return service_ticket_schema.jsonify(new_ticket), 201
@@ -160,6 +161,9 @@ def add_items(mechanic_id):
     
     # Add items
     for item in items_quant:
+        if item['quantity'] <= 0:
+            continue
+        
         itm = db.session.get(Inventory, item['item_id'])
     
         if not itm:

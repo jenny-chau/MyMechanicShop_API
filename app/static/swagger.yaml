@@ -1,0 +1,1338 @@
+swagger: '2.0'
+info:
+  title: "MyMechanicShop API"
+  description: "API for a mechanic shop with endpoints for customers, mechanic staff, inventory, and service tickets"
+  version: '1.0.0'
+host: "127.0.0.1:5000"
+schemes: 
+  - 'http'
+consumes:
+  - 'application/json'
+produces:
+  - 'application/json'
+
+securityDefinitions:
+  bearerAuthCustomer:
+    type: apiKey
+    name: Authorization
+    in: header
+  bearerAuthMechanic:
+    type: apiKey
+    name: Authorization
+    in: header
+
+paths:
+  /customers/login:
+    post:
+      tags:
+        - Customers
+      summary: "Customer login endpoint (generates auth token)"
+      description: "Validates customer login credentials. Generates and returns a customer specific authentication token that can be used to access restricted endpoints."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Customer Login Credentials"
+          required: true
+          schema:
+            $ref: "#/definitions/LoginCredentials"
+      responses:
+        200:
+          description: "Login Successful"
+          schema:
+            $ref: "#/definitions/LoginResponse"
+          examples:
+            application/json:
+              status: "Success"
+              message: "Successfully logged in"
+              auth_token: "dfg87EGLsd..."
+
+  /customers:
+    post:
+      tags:
+        - Customers
+      summary: "Endpoint to create or register a new customer"
+      description: "Create a new customer in the mechanic shop database. Email must be unique. Limit of 3 new customers created per hour."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Information to Create Customer"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateCustomerPayload"
+      responses:
+        201:
+          description: "Successfully created customer account"
+          schema:
+            $ref: "#/definitions/CreateCustomerResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john@email.com"
+              phone: "(123)456-7890"
+              password: "password123"
+
+    get:
+      tags:
+        - Customers
+      summary: "Returns all customers"
+      description: "Endpoint to retrieve all customers from the database (login not required, returns all customer information except the passwords). Data gets cached for 60 seconds."
+      responses:
+        200:
+          description: "Retrieved all customers successfully"
+          schema:
+            $ref: "#/definitions/AllCustomers"
+          examples:
+            application/json:
+              [
+                {
+                  id: 1,
+                  name: "John Doe",
+                  email: "john@email.com",
+                  phone: "(123)456-7890"
+                },
+                {
+                  id: 2,
+                  name: "Jane Pot",
+                  email: "jane@email.com",
+                  phone: "(123)456-7891"
+                }
+              ]
+
+    put:
+      tags:
+        - Customers
+      summary: "Update customer data"
+      description: "Endpoint to update the logged-in customer's data. This is a token authenticated route. The customer must be logged in to update their account."
+      security:
+        - bearerAuthCustomer: []
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Information needed to update customer"
+          required: true
+          schema: 
+            $ref: "#/definitions/UpdateCustomerPayload"
+      responses:
+        200:
+          description: "Successfully updated customer"
+          schema:
+            $ref: "#/definitions/UpdateCustomerResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john@email.com"
+              phone: "(123)456-7890"
+              password: "password123"
+
+    delete:
+      tags:
+        - Customers
+      summary: "Delete customer"
+      description: "Endpoint to delete customer. This is a token authenticated route. Customer must be logged in to delete their account. Deleting the account will also delete all service tickets associated with the customer."
+      security:
+        - bearerAuthCustomer: []
+      responses:
+        200:
+          description: "Successfully deleted customer"
+          schema:
+            $ref: "#/definitions/DeleteCustomerResponse"
+          examples:
+            application/json:
+              message: "Customer successfully deleted"
+
+  /customers/{customer_id}:
+    get:
+      tags:
+        - Customers
+      summary: "Returns specific customer based on ID"
+      description: "Endpoint to retrieve a customer based on the customer's ID (login not required, returns the customer's information except their password)"
+      parameters:
+        - in: "path"
+          name: "customer_id"
+          description: "Numeric ID to identify which customer to get"
+          required: true
+          schema:
+            type: "integer"
+      responses:
+        200:
+          description: "Retrieved customer information successfully"
+          schema:
+            $ref: "#/definitions/SingleCustomerResponse"
+          examples:
+            application/json:
+              id: 1,
+              name: "John Doe"
+              email: "john@email.com"
+              phone: "(123)456-7890"
+
+  /customers/my-tickets:
+    get:
+      tags:
+        - Customers
+      summary: "Retrieve customer's service tickets"
+      description: "Retrieves all the service tickets associated with the customer. This is a token authenticated route. Customer must be logged in to see their tickets."
+      security:
+        - bearerAuthCustomer: []
+      responses:
+        200:
+          description: "Successfully retrieved customer service tickets"
+          schema:
+            $ref: "#/definitions/AllCustomerTickets"
+          examples:
+            application/json:
+              [
+                {
+                  "id": 1,
+                  "VIN": "1234567",
+                  "service_date": "2025-07-22",
+                  "service_desc": "Oil change",
+                  "customer": {
+                    "email": "john@email.com",
+                    "name": "John Doe",
+                    "phone": "(123)456-7890"
+                  },
+                  "mechanics": [
+                    {
+                      "email": "mech@email.com",
+                      "name": "Ron",
+                      "phone": "(123)456-7892"
+                    }
+                  ],
+                  "items": [
+                    {
+                      "item": {
+                        "name": "item 1",
+                        "price": 1.00
+                      },
+                      "quantity": 1
+                    },
+                    {
+                      "item": {
+                        "name": "item 2",
+                        "price": 2.00
+                      },
+                      "quantity": 2
+                    }
+                  ],
+                }
+              ]
+
+  /mechanics/login:
+    post:
+      tags:
+        - Mechanics
+      summary: "Mechanic login endpoint (generates auth token)"
+      description: "Validates Mechanic login credentials. Generates and returns a Mechanic specific authentication token that can be used to access restricted endpoints."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Mechanic Login Credentials"
+          required: true
+          schema:
+            $ref: "#/definitions/LoginCredentials"
+      responses:
+        200:
+          description: "Login Successful"
+          schema:
+            $ref: "#/definitions/LoginResponse"
+          examples:
+            application/json:
+              status: "Success"
+              message: "Successfully logged in"
+              auth_token: "dfg87EGLsd..."
+
+  /mechanics:
+    post:
+      tags:
+        - Mechanics
+      summary: "Endpoint to create or register a new Mechanic"
+      description: "Create a new mechanic employee for your mechanic shop. Email must be unique between mechanics. Limit of 10 new mechanics can be created per hour."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Information to Create Mechanic"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateMechanicPayload"
+      responses:
+        201:
+          description: "Successfully created mechanic account"
+          schema:
+            $ref: "#/definitions/CreateMechanicResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john@email.com"
+              phone: "(123)456-7890"
+              salary: 100000
+              password: "password123"
+
+    get:
+      tags:
+        - Mechanics
+      summary: "Returns all mechanics"
+      description: "Endpoint to retrieve all mechanics from the database (login not required, returns all mechanic information except the passwords and salaries). Data gets cached for 60 seconds."
+      responses:
+        200:
+          description: "Retrieved all mechanics successfully"
+          schema:
+            $ref: "#/definitions/AllMechanics"
+          examples:
+            application/json:
+              [
+                {
+                  id: 1,
+                  name: "John Doe",
+                  email: "john@email.com",
+                  phone: "(123)456-7890"
+                },
+                {
+                  id: 2,
+                  name: "Jane Pot",
+                  email: "jane@email.com",
+                  phone: "(123)456-7891"
+                }
+              ]
+
+    put:
+      tags:
+        - Mechanics
+      summary: "Update mechanic data"
+      description: "Endpoint to update the logged-in mechanic's data. This is a token authenticated route. The mechanic must be logged in to update their account."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Information needed to update mechanic"
+          required: true
+          schema: 
+            $ref: "#/definitions/UpdateMechanicPayload"
+      responses:
+        200:
+          description: "Successfully updated mechanic"
+          schema:
+            $ref: "#/definitions/UpdateMechanicResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "John Doe"
+              email: "john@email.com"
+              phone: "(123)456-7890"
+              salary: 100000
+              password: "password123"
+
+    delete:
+      tags:
+        - Mechanics
+      summary: "Delete mechanic"
+      description: "Endpoint to delete mechanic. This is a token authenticated route. Mechanic must be logged in to delete their account."
+      security:
+        - bearerAuthMechanic: []
+      responses:
+        200:
+          description: "Successfully deleted mechanic"
+          schema:
+            $ref: "#/definitions/DeleteMechanicResponse"
+          examples:
+            application/json:
+              message: "Mechanic successfully deleted"
+
+  /mechanics/ranked:
+    get:
+      tags:
+        - Mechanics
+      summary: "Rank mechanics"
+      description: "Retrieve all mechanics, ranked from most to least service tickets worked on"
+      responses:
+        200:
+          description: "Successfully retrieved mechanics ranked by most tickets worked on. Mechanic data excludes password and salary."
+          schema:
+            $ref: "#/definitions/RankMechanicsResponse"
+          examples:
+            application/json:
+              [
+                {
+                  id: 1,
+                  name: "John Doe",
+                  email: "john@email.com",
+                  phone: "(123)456-7890"
+                },
+                {
+                  id: 2,
+                  name: "Jane Pot",
+                  email: "jane@email.com",
+                  phone: "(123)456-7891"
+                }
+              ]
+
+  /inventory:
+    post:
+      tags: 
+        - Inventory
+      summary: "Create item"
+      description: "Create an item and add it to the shop's inventory. This is a mechanic-specific token authenticated route. Items may only be created by mechanics."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Item information"
+          required: true
+          schema: 
+            $ref: "#/definitions/CreateItemPayload"
+      responses:
+        201:
+          description: "Successfully created item in inventory"
+          schema:
+            $ref: "#/definitions/CreateItemResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "Wheels"
+              price: 10.00
+
+    get:
+      tags: 
+        - Inventory
+      summary: "Retrieve all inventory items"
+      description: "Retrieves all inventory items. Returns the id, name, and price of each item."
+      responses:
+        200:
+          description: "Successfully retrieved all items"
+          schema:
+            $ref: "#/definitions/AllItemsResponse"
+          examples:
+            application/json: 
+              [
+                {
+                  id: 1,
+                  name: "Wheels",
+                  price: 10.00
+                },
+                {
+                  id: 2,
+                  name: "Screws",
+                  price: 1.00
+                }
+              ]
+
+  /inventory/{item_id}:
+    get:
+      tags: 
+        - Inventory
+      summary: "Retrieve item by ID"
+      description: "Retrieves a single item by its ID provided in the route path."
+      parameters:
+        - in: "path"
+          name: "item_id"
+          description: "Numeric ID to identify which item to get"
+          required: true
+          schema: 
+            type: "integer"
+      responses:
+        200:
+          description: "Successfully retrieved item data"
+          schema:
+            $ref: "#/definitions/SingleItemResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "Wheels"
+              price: 1.00
+
+    put:
+      tags: 
+        - Inventory
+      summary: "Update item by ID"
+      description: "Updates a single item by its ID provided in the route path. This is a mechanic-specific token authenticated route. Mechanic must be logged in to modify the item data."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "path"
+          name: "item_id"
+          description: "Numeric ID to identify which item to get"
+          required: true
+          schema: 
+            type: "integer"
+        - in: "body"
+          name: "body"
+          description: "Updated item information"
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateItemPayload"
+      responses:
+        200:
+          description: "Successfully updated item in inventory"
+          schema:
+            $ref: "#/definitions/UpdateItemResponse"
+          examples:
+            application/json:
+              id: 1
+              name: "Wheels"
+              price: 2.00
+
+    delete:
+      tags: 
+        - Inventory
+      summary: "Delete item by ID"
+      description: "Deletes a single item by its ID provided in the route path. This is a mechanic-specific token authenticated route. Mechanic must be logged in to delete the item from the inventory."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "path"
+          name: "item_id"
+          description: "Numeric ID to identify which item to get"
+          required: true
+          schema: 
+            type: "integer"
+      responses:
+        200:
+          description: "Successfully deleted item from the inventory"
+          schema:
+            $ref: "#/definitions/DeleteItemResponse"
+          examples:
+            application/json:
+              message: "Item successfully deleted."
+
+  /serviceticket:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Create a service ticket"
+      description: "Create a service ticket. This is a customer-specific token authenticated route. Customer must be logged in to create a service ticket request. Limit of 20 service ticket creations per hour."
+      security:
+        - bearerAuthCustomer: []
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Service ticket information"
+          required: true
+          schema:
+            $ref: "#/definitions/CreateServiceTicketPayload"
+      responses:
+        201:
+          description: "Successfully created service ticket"
+          schema:
+            $ref: "#/definitions/CreateServiceTicketResponse"
+          examples:
+            application/json:
+              "id": 1
+              "VIN": "1234567"
+              "service_date": "2025-07-22"
+              "service_desc": "Oil change"
+              "customer": {
+                "email": "john@email.com",
+                "name": "John Doe",
+                "phone": "(123)456-7890"
+              }
+              "mechanics": []
+              "items": []
+
+    get:
+      tags:
+        - Service Tickets
+      summary: "Retrieve all service tickets"
+      description: "Retrieve all service tickets. No log in required (no passwords or salaries are returned). Data gets cached for 60 seconds."
+      responses:
+        200:
+          description: "Successfully retrieved all service tickets"
+          schema:
+            $ref: "#/definitions/AllServiceTickets"
+          examples:
+            application/json:
+              [
+                {
+                  "id": 1,
+                  "VIN": "1234567",
+                  "service_date": "2025-07-22",
+                  "service_desc": "Oil change",
+                  "customer": {
+                    "email": "john@email.com",
+                    "name": "John Doe",
+                    "phone": "(123)456-7890"
+                  },
+                  "mechanics": [
+                    {
+                      "email": "mech@email.com",
+                      "name": "Ron",
+                      "phone": "(123)456-7892"
+                    }
+                  ],
+                  "items": [
+                    {
+                      "item": {
+                        "name": "item 1",
+                        "price": 1.00
+                      },
+                      "quantity": 1
+                    },
+                    {
+                      "item": {
+                        "name": "item 2",
+                        "price": 2.00
+                      },
+                      "quantity": 2
+                    }
+                  ],
+                }
+              ]
+
+  /serviceticket/{ticket_id}/assign-mechanic:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Assign current mechanic to service ticket"
+      description: "Add the mechanic that is currently logged in to the service ticket (ID given in path). This is a mechanic-specific token authenticated route. Mechanic must be logged in to assign themselves to the service ticket. For assigning other mechanics, use the '/serviceticket/{ticket_id}/edit' route to edit."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "path"
+          name: "ticket_id"
+          description: "Numeric ID to identify the service ticket that should be modified."
+          required: true
+          schema:
+            type: "integer"
+      responses:
+        200:
+          description: "Successfully added mechanic to service ticket"
+          schema:
+            $ref: "#/definitions/AssignMechanicToServiceTicket"
+          examples:
+            application/json:
+              message: "Mechanic 1 added to Service Ticket #1"
+
+  /serviceticket/{ticket_id}/remove-mechanic:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Remove current mechanic from service ticket"
+      description: "Remove the mechanic that is currently logged in from the service ticket (ID given in path). This is a mechanic-specific token authenticated route. Mechanic must be logged in to remove themselves from the service ticket. For removing other mechanics, use the '/serviceticket/{ticket_id}/edit' route to edit."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "path"
+          name: "ticket_id"
+          description: "Numeric ID to identify the service ticket that should be modified."
+          required: true
+          schema:
+            type: "integer"
+      responses:
+        200:
+          description: "Successfully removed mechanic from the service ticket"
+          schema:
+            $ref: "#/definitions/RemoveMechanicFromServiceTicket"
+          examples:
+            application/json:
+              message: "Mechanic successfully removed from Service Ticket #1"
+
+  /serviceticket/{ticket_id}/edit:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Add/remove mechanics from service ticket"
+      description: "Add/removes mechanics from the service ticket (ID provided in path). The mechanic currently logged in may add/remove other mechanics by their ids passed in. Mechanic-specific token authenticated route. List of mechanic IDs to add/remove should be included in the request."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "path"
+          name: "ticket_id"
+          description: "Numeric ID to identify which service ticket to get"
+          required: true
+          schema:
+            type: "integer"
+        - in: "body"
+          name: "body"
+          description: "Mechanic IDs to add/remove"
+          required: false
+          schema:
+            $ref: "#/definitions/EditServiceTicketMechanicsPayload"
+      responses:
+        200:
+          description: "Successfully added/removed the mechanic(s) listed from the service ticket."
+          schema:
+            $ref: "#/definitions/EditServiceTicketMechanicsResponse"
+          examples:
+            application/json:
+              "id": 1
+              "VIN": "1234567"
+              "service_date": "2025-07-22"
+              "service_desc": "Oil change"
+              "customer": {
+                "email": "john@email.com",
+                "name": "John Doe",
+                "phone": "(123)456-7890"
+              }
+              "mechanics": [
+                {
+                  "email": "mech@email.com",
+                  "name": "Ron",
+                  "phone": "(123)456-7892"
+                }
+              ]
+              "items": [
+                {
+                  "item": {
+                    "name": "item 1",
+                    "price": 1.00
+                  },
+                  "quantity": 1
+                },
+                {
+                  "item": {
+                    "name": "item 2",
+                    "price": 2.00
+                  },
+                  "quantity": 2
+                }
+              ]
+
+  /serviceticket/add_items:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Add items to service ticket"
+      description: "Add items from the inventory to the service ticket (ID provided in the body). This is a mechanic-specific token authenticated route. Mechanic must be logged in AND already assigned to the service ticket to add items to the service ticket. Quantity of the items are stored as well. Items with quantity 0 or less will not get added to the service ticket."
+      security:
+        - bearerAuthMechanic: []
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Provide service ticket ID, which items to add and quantity of each item."
+          required: true
+          schema:
+            $ref: "#/definitions/AddItemsToServiceTicketPayload"
+      responses:
+        200:
+          description: "Successfully added items to the service ticket"
+          schema:
+            $ref: "#/definitions/AddItemsToServiceTicketResponse"
+          examples:
+            application/json:
+              "id": 1
+              "VIN": "1234567"
+              "service_date": "2025-07-22"
+              "service_desc": "Oil change"
+              "customer": {
+                "email": "john@email.com",
+                "name": "John Doe",
+                "phone": "(123)456-7890"
+              }
+              "mechanics": [
+                {
+                  "email": "mech@email.com",
+                  "name": "Ron",
+                  "phone": "(123)456-7892"
+                }
+              ]
+              "items": [
+                {
+                  "item": {
+                    "name": "item 1",
+                    "price": 1.00
+                  },
+                  "quantity": 1
+                },
+                {
+                  "item": {
+                    "name": "item 2",
+                    "price": 2.00
+                  },
+                  "quantity": 2
+                }
+              ]
+
+definitions:
+  LoginCredentials:
+    type: "object"
+    properties:
+      email:
+        type: "string"
+      password:
+        type: "string"
+    required:
+      - email
+      - password
+  
+  LoginResponse:
+    type: "object"
+    properties:
+      status:
+        type: "string"
+      message:
+        type: "string"
+      auth_token:
+        type: string
+  
+  CreateCustomerPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      password:
+        type: "string"
+    required:
+      - name
+      - email
+      - phone
+      - password
+
+  CreateCustomerResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      password:
+        type: "string"
+
+  AllCustomers:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+        email:
+          type: "string"
+        phone:
+          type: "string"
+
+  SingleCustomerResponse:
+    type: "object"
+    properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+        email:
+          type: "string"
+        phone:
+          type: "string"
+
+  UpdateCustomerPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      password:
+        type: "string"
+    required:
+      - name
+      - email
+      - phone
+      - password
+
+  UpdateCustomerResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      password:
+        type: "string"
+
+  DeleteCustomerResponse:
+    type: "object"
+    properties:
+      message: 
+        type: "string"
+
+  AllCustomerTickets:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        VIN:
+          type: "string"
+        service_date:
+          type: "string"
+          format: date
+        service_desc:
+          type: "string"
+        customer:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+        mechanics:
+          type: "array"
+          items: 
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              email:
+                type: "string"
+              phone:
+                type: "string"
+        items:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              item:
+                type: "object"
+                properties:
+                  name:
+                    type: "string"
+                  price:
+                    type: "number"
+                    format: "float"
+              quantity:
+                type: "integer"
+
+  CreateMechanicPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      salary:
+        type: "number"
+        format: "float"
+      password:
+        type: "string"
+    required:
+      - name
+      - email
+      - phone
+      - salary
+      - password
+
+  CreateMechanicResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      salary:
+        type: "number"
+        format: "float"
+      password:
+        type: "string"
+
+  AllMechanics:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+        email:
+          type: "string"
+        phone:
+          type: "string"
+
+  UpdateMechanicPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      salary:
+        type: "number"
+        format: "float"
+      password:
+        type: "string"
+    required:
+      - name
+      - email
+      - phone
+      - salary
+      - password
+
+  UpdateMechanicResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      email:
+        type: "string"
+      phone:
+        type: "string"
+      salary:
+        type: "number"
+        format: "float"
+      password:
+        type: "string"
+
+  DeleteMechanicResponse:
+    type: "object"
+    properties:
+      message: 
+        type: "string"
+
+  RankMechanicsResponse:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+        email:
+          type: "string"
+        phone:
+          type: "string"
+
+  CreateItemPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      price:
+        type: "number"
+        format: "float"
+
+  CreateItemResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      price:
+        type: "number"
+        format: "float"
+
+  AllItemsResponse:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        name:
+          type: "string"
+        price:
+          type: "number"
+          format: "float"
+
+  SingleItemResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      price:
+        type: "number"
+        format: "float"
+
+  UpdateItemPayload:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      price:
+        type: "number"
+        format: "float"
+
+  UpdateItemResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      price:
+        type: "number"
+        format: "float"
+
+  DeleteItemResponse:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+
+  CreateServiceTicketPayload:
+    type: "object"
+    properties:
+      VIN:
+        type: "string"
+      service_date:
+        type: "string"
+        format: "date"
+      service_desc:
+        type: "string"
+
+  CreateServiceTicketResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      VIN:
+        type: "string"
+      service_date:
+        type: "string"
+        format: date
+      service_desc:
+        type: "string"
+      customer:
+        type: "object"
+        properties:
+          name:
+            type: "string"
+          email:
+            type: "string"
+          phone:
+            type: "string"
+      mechanics:
+        type: "array"
+        items: 
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+      items:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            item:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                price:
+                  type: "number"
+                  format: "float"
+            quantity:
+              type: "integer"
+
+  AllServiceTickets:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        id:
+          type: "integer"
+        VIN:
+          type: "string"
+        service_date:
+          type: "string"
+          format: date
+        service_desc:
+          type: "string"
+        customer:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+        mechanics:
+          type: "array"
+          items: 
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              email:
+                type: "string"
+              phone:
+                type: "string"
+        items:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              item:
+                type: "object"
+                properties:
+                  name:
+                    type: "string"
+                  price:
+                    type: "number"
+                    format: "float"
+              quantity:
+                type: "integer"
+
+  AssignMechanicToServiceTicket:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+
+  RemoveMechanicFromServiceTicket:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+
+  EditServiceTicketMechanicsPayload:
+    type: "object"
+    properties:
+      add_mechanic_ids:
+        type: "array"
+        items:
+          type: "integer"
+        default: []
+      remove_mechanic_ids:
+        type: "array"
+        items:
+          type: "integer"
+        default: []
+
+  EditServiceTicketMechanicsResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      VIN:
+        type: "string"
+      service_date:
+        type: "string"
+        format: date
+      service_desc:
+        type: "string"
+      customer:
+        type: "object"
+        properties:
+          name:
+            type: "string"
+          email:
+            type: "string"
+          phone:
+            type: "string"
+      mechanics:
+        type: "array"
+        items: 
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+      items:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            item:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                price:
+                  type: "number"
+                  format: "float"
+            quantity:
+              type: "integer"
+
+  AddItemsToServiceTicketPayload:
+    type: "object"
+    properties:
+      ticket_id:
+        type: "integer"
+      item_quant:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            item_id:
+              type: "integer"
+            quantity:
+              type: "integer"
+
+  AddItemsToServiceTicketResponse:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      VIN:
+        type: "string"
+      service_date:
+        type: "string"
+        format: date
+      service_desc:
+        type: "string"
+      customer:
+        type: "object"
+        properties:
+          name:
+            type: "string"
+          email:
+            type: "string"
+          phone:
+            type: "string"
+      mechanics:
+        type: "array"
+        items: 
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            email:
+              type: "string"
+            phone:
+              type: "string"
+      items:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            item:
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                price:
+                  type: "number"
+                  format: "float"
+            quantity:
+              type: "integer"

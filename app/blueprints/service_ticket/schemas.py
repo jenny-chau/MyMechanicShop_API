@@ -9,11 +9,10 @@ class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = ServiceTicket
         include_relationships = True
-        include_fk = True 
         
 class EditServiceTicket(ma.Schema):
-    add_mechanic_ids = fields.List(fields.Int(), required=True)
-    remove_mechanic_ids = fields.List(fields.Int(), required=True)
+    add_mechanic_ids = fields.List(fields.Int())
+    remove_mechanic_ids = fields.List(fields.Int())
     class Meta:
         fields = ('add_mechanic_ids', 'remove_mechanic_ids')
         
