@@ -76,7 +76,20 @@ paths:
       tags:
         - Customers
       summary: "Returns all customers"
-      description: "Endpoint to retrieve all customers from the database (login not required, returns all customer information except the passwords). Data gets cached for 60 seconds."
+      description: "Endpoint to retrieve all customers from the database (login not required, returns all customer information except the passwords). Data gets cached for 60 seconds. Query parameters for page and per_page can be included in the route to retrieve the data paginated."
+      parameters:
+        - in: "query"
+          name: "page"
+          description: "Page number to display of paginated customers"
+          required: false
+          schema: 
+            type: "integer"
+        - in: "query"
+          name: "per_page"
+          description: "Number of customers per page for pagination"
+          required: false
+          schema: 
+            type: "integer"
       responses:
         200:
           description: "Retrieved all customers successfully"

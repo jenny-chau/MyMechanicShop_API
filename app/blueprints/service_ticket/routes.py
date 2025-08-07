@@ -43,7 +43,7 @@ def assign_mechanic(mechanic_id, ticket_id):
     if not mechanic:
         return jsonify({"error": "Mechanic not found"}), 404
 
-    # Check if mechanic is alerady assigned to ticket
+    # Check if mechanic is already assigned to ticket
     if mechanic in ticket.mechanics:
         return jsonify({"message": "Mechanic already assigned to service ticket"}), 200
     

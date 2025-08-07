@@ -31,7 +31,7 @@ def login():
         
         return jsonify(response), 200
     else:
-        return jsonify({'error':'Inavlid username or password'}), 401
+        return jsonify({'error':'Invalid username or password'}), 401
 
 # POST '/' : Creates a new Mechanic
 @mechanics_bp.route("/", methods=["POST"])
@@ -80,7 +80,7 @@ def update_mechanic(id):
     except ValidationError as e:
         return jsonify(e.messages), 400
     
-    #check for email dulplicate
+    #check for email duplicate
     query = select(Mechanic).where(Mechanic.email == updates['email'])
     existing_mechanic = db.session.execute(query).scalars().all()
     
@@ -89,7 +89,8 @@ def update_mechanic(id):
     
     #update mechanic
     for key, value in updates.items():
-        setattr(mechanic, key, value)
+        if value:
+            setattr(mechanic, key, value)
     
     db.session.commit()
     return mechanic_schema.jsonify(mechanic), 200

@@ -108,7 +108,8 @@ def update_customer(customer_id):
     
     # Update customer entry
     for key, value in customer_data.items():
-        setattr(customer, key, value)
+        if value:
+            setattr(customer, key, value)
     
     db.session.commit()
     return customer_schema.jsonify(customer), 200
