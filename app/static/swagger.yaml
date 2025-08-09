@@ -27,7 +27,7 @@ paths:
       tags:
         - Customers
       summary: "Customer login endpoint (generates auth token)"
-      description: "Validates customer login credentials. Generates and returns a customer specific authentication token that can be used to access restricted endpoints."
+      description: "Validates customer login credentials. Generates and returns a customer specific authentication token that can be used to access restricted endpoints. Email username is case insensitive."
       parameters:
         - in: "body"
           name: "body"
@@ -51,7 +51,7 @@ paths:
       tags:
         - Customers
       summary: "Endpoint to create or register a new customer"
-      description: "Create a new customer in the mechanic shop database. Email must be unique. Limit of 3 new customers created per hour."
+      description: "Create a new customer in the mechanic shop database. Email must be unique. Email is case insensitive and will be stored lowercased. Limit of 3 new customers created per hour."
       parameters:
         - in: "body"
           name: "body"
@@ -116,7 +116,7 @@ paths:
       tags:
         - Customers
       summary: "Update customer data"
-      description: "Endpoint to update the logged-in customer's data. This is a token authenticated route. The customer must be logged in to update their account."
+      description: "Endpoint to update the logged-in customer's data. This is a token authenticated route. The customer must be logged in to update their account. Email is case insensitive and will be stored lowercased."
       security:
         - bearerAuthCustomer: []
       parameters:
@@ -237,7 +237,7 @@ paths:
       tags:
         - Mechanics
       summary: "Mechanic login endpoint (generates auth token)"
-      description: "Validates Mechanic login credentials. Generates and returns a Mechanic specific authentication token that can be used to access restricted endpoints."
+      description: "Validates Mechanic login credentials. Generates and returns a Mechanic specific authentication token that can be used to access restricted endpoints. Email username is case insensitive."
       parameters:
         - in: "body"
           name: "body"
@@ -261,7 +261,7 @@ paths:
       tags:
         - Mechanics
       summary: "Endpoint to create or register a new Mechanic"
-      description: "Create a new mechanic employee for your mechanic shop. Email must be unique between mechanics. Limit of 10 new mechanics can be created per hour."
+      description: "Create a new mechanic employee for your mechanic shop. Email must be unique between mechanics. Email is case insensitive and will be stored lowercased. Limit of 10 new mechanics can be created per hour."
       parameters:
         - in: "body"
           name: "body"
@@ -314,7 +314,7 @@ paths:
       tags:
         - Mechanics
       summary: "Update mechanic data"
-      description: "Endpoint to update the logged-in mechanic's data. This is a token authenticated route. The mechanic must be logged in to update their account."
+      description: "Endpoint to update the logged-in mechanic's data. This is a token authenticated route. The mechanic must be logged in to update their account. Email is case insensitive and will be stored lowercased."
       security:
         - bearerAuthMechanic: []
       parameters:
@@ -387,7 +387,7 @@ paths:
       tags: 
         - Inventory
       summary: "Create item"
-      description: "Create an item and add it to the shop's inventory. This is a mechanic-specific token authenticated route. Items may only be created by mechanics."
+      description: "Create an item and add it to the shop's inventory. Item names are case insensitive and stored lowercased. This is a mechanic-specific token authenticated route. Items may only be created by mechanics."
       security:
         - bearerAuthMechanic: []
       parameters:
@@ -461,7 +461,7 @@ paths:
       tags: 
         - Inventory
       summary: "Update item by ID"
-      description: "Updates a single item by its ID provided in the route path. This is a mechanic-specific token authenticated route. Mechanic must be logged in to modify the item data."
+      description: "Updates a single item by its ID provided in the route path. Item names are case insensitive and stored lowercased. This is a mechanic-specific token authenticated route. Mechanic must be logged in to modify the item data."
       security:
         - bearerAuthMechanic: []
       parameters:

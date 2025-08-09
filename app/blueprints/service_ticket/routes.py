@@ -14,14 +14,14 @@ from app.utils.util import token_required_mechanic, token_required_customer
 @limiter.limit('20 per hour') # Prevent too many service tickets from being created at once
 @token_required_customer #required customer log in to submit a service request
 def create_service_ticket(customer_id):
+    customer = db.session.get(Customer, customer_id)
+    if not customer:
+        return jsonify({"error":"Customer not found"}), 404
+
     try:
         ticket = service_ticket_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
-
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-        return jsonify({"error":"Customer not found"}), 404
     
     new_ticket = ServiceTicket(**ticket, customer_id=customer.id)
     db.session.add(new_ticket)
@@ -61,7 +61,7 @@ def remove_mechanic(mechanic_id, ticket_id):
     
     # Check if ticket or mechanic exists
     if not ticket or not mechanic:
-        return jsonify({"error":"Service ticket or mechanic are not found"}), 404
+        return jsonify({"error":"Service ticket or mechanic not found"}), 404
     
     # Check if mechanic is assigned to ticket
     if mechanic not in ticket.mechanics:
@@ -104,30 +104,32 @@ def edit_ticket(mechanic_id, ticket_id):
         return jsonify(e.messages), 400
     
     # Loop through add list to add each mechanic
-    for mech_id in ticket_edits['add_mechanic_ids']:
-        query = select(Mechanic).where(Mechanic.id == mech_id)
-        mechanic = db.session.execute(query).scalar_one_or_none()
-        
-        # Check mechanic exists
-        if not mechanic:
-            return jsonify({'error':'One or more mechanics not found'}), 404
-        
-        # Add only if mechanic is not already in the list
-        if mechanic not in ticket.mechanics:
-            ticket.mechanics.append(mechanic)
+    if 'add_mechanic_ids' in ticket_edits:
+        for mech_id in ticket_edits['add_mechanic_ids']:
+            query = select(Mechanic).where(Mechanic.id == mech_id)
+            mechanic = db.session.execute(query).scalar_one_or_none()
             
+            # Check mechanic exists
+            if not mechanic:
+                return jsonify({'error':'One or more mechanics not found'}), 404
+            
+            # Add only if mechanic is not already in the list
+            if mechanic not in ticket.mechanics:
+                ticket.mechanics.append(mechanic)
+                
     # Loop through add list to add each mechanic   
-    for mech_id in ticket_edits['remove_mechanic_ids']:
-        query = select(Mechanic).where(Mechanic.id == mech_id)
-        mechanic = db.session.execute(query).scalar_one_or_none()
-        
-        # Check mechanic exists
-        if not mechanic:
-            return jsonify({'error':'One or more mechanics not found'}), 404
-        
-        # Remove only if mechanic is in the list
-        if mechanic in ticket.mechanics:
-            ticket.mechanics.remove(mechanic)
+    if 'remove_mechanic_ids' in ticket_edits:
+        for mech_id in ticket_edits['remove_mechanic_ids']:
+            query = select(Mechanic).where(Mechanic.id == mech_id)
+            mechanic = db.session.execute(query).scalar_one_or_none()
+            
+            # Check mechanic exists
+            if not mechanic:
+                return jsonify({'error':'One or more mechanics not found'}), 404
+            
+            # Remove only if mechanic is in the list
+            if mechanic in ticket.mechanics:
+                ticket.mechanics.remove(mechanic)
     
     db.session.commit()
     return service_ticket_schema.jsonify(ticket), 200

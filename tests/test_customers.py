@@ -54,10 +54,34 @@ class TestCustomer(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json["error"], "Customer exists already")
     
+    def test_duplicate_email_capital_create_customer(self):
+        customer_payload = {
+            "name": "Wasabi",
+            "email": "WASABI@email.com",
+            "phone": "123345434",
+            "password": "123"
+        }
+        
+        response = self.client.post('/customers/', json=customer_payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json["error"], "Customer exists already")
+    
+    
     # Test customer login endpoint
     def test_customer_login(self):
         login_payload = {
             "email": "wasabi@email.com",
+            "password": "123"
+        }
+        
+        response = self.client.post('/customers/login', json=login_payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["message"], "Successfully logged in")
+        return response.json["auth_token"]
+    
+    def test_capital_customer_login(self):
+        login_payload = {
+            "email": "WASABI@email.com",
             "password": "123"
         }
         
@@ -111,7 +135,7 @@ class TestCustomer(unittest.TestCase):
             "password": "1234"
         }
         
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
+        headers = {"Authorization": "Bearer " + self.token}
         response = self.client.put('/customers/', json=update_payload, headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json['name'], "Wasabi")
@@ -124,7 +148,7 @@ class TestCustomer(unittest.TestCase):
             "password": "1234"
         }
         
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
+        headers = {"Authorization": "Bearer " + self.token}
         response = self.client.put('/customers/', json=update_payload, headers=headers)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json['name'], ['Missing data for required field.'])
@@ -137,12 +161,39 @@ class TestCustomer(unittest.TestCase):
             "password": "1234"
         }
         
-        self.test_create_customer()
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
+        customer_payload = {
+            "name": "Sashimi",
+            "email": "sashimi@email.com",
+            "phone": "1234567890",
+            "password": "123"
+        }
+        
+        self.client.post('/customers/', json=customer_payload)
+        headers = {"Authorization": "Bearer " + self.token}
         response = self.client.put('/customers/', json=update_payload, headers=headers)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json['error'], "email already exists. Please use another email.")
 
+    def test_duplicate_email_capital_update_customer(self):
+            update_payload = {
+                "name": "Wasabi",
+                "email": "SASHIMI@email.com",
+                "phone": "123345434",
+                "password": "123"
+            }
+            
+            new_customer_payload = {
+            "name": "Sashimi",
+            "email": "sashimi@email.com",
+            "phone": "1234567890",
+            "password": "123"
+            }
+            self.client.post('/customers/', json=new_customer_payload)
+            headers = {"Authorization": "Bearer " + self.token}
+            response = self.client.put('/customers/', json=update_payload, headers=headers)
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json["error"], "email already exists. Please use another email.")
+    
     def test_invalid_customer_update_customer(self):
         update_payload = {
             "name": "Wasabi new",
@@ -151,29 +202,54 @@ class TestCustomer(unittest.TestCase):
             "password": ""
         }
         
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
-        self.test_delete_customer()
+        headers = {"Authorization": "Bearer " + self.token}
+        self.client.delete('/customers/', headers=headers)
         response = self.client.put('/customers/', json=update_payload, headers=headers)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json['error'], "Customer not found")
+        
+    def test_missing_token_update_customer(self):
+        update_payload = {
+            "name": "Wasabi new",
+            "email": "",
+            "phone": "",
+            "password": ""
+        }
+        
+        response = self.client.put('/customers/', json=update_payload)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json['error'], "Token not found")
+        
+    def test_invalid_token(self):
+        headers = {"Authorization": "Bearer invalid"}
+        response = self.client.put('/customers/', headers=headers)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json['error'], "Invalid token")
 
     # Test delete customer route
     def test_delete_customer(self):
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
+        headers = {"Authorization": "Bearer " + self.token}
         response = self.client.delete('/customers/', headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json['message'], "Customer successfully deleted")
         
+    def test_delete_nonexistant_customer(self):
+        headers = {"Authorization": "Bearer " + self.token}
+        self.client.delete('/customers/', headers=headers)
+        response = self.client.delete('/customers/', headers=headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json['error'], "Customer not found")
+        
     # Test the route to get all service tickets associated with customer
     def test_get_service_tickets(self):
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
+        headers = {"Authorization": "Bearer " + self.token}
         response = self.client.get('/customers/my-tickets', headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json[0]["VIN"], "123")
         
     def test_invalid_customer_get_tickets(self):        
-        headers = {"Authorization": "Bearer " + self.test_customer_login()}
-        self.test_delete_customer()
+        headers = {"Authorization": "Bearer " + self.token}
+        self.client.delete('/customers/', headers=headers)
         response = self.client.get('/customers/my-tickets', headers=headers)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json['error'], "customer not found")

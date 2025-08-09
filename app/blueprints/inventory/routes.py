@@ -18,15 +18,16 @@ def create_item(mechanic_id):
     #  Load data from client side
     try:
         data = inventory_schema.load(request.json)
+        data['name'] = data['name'].lower()
     except ValidationError as e:
         return jsonify(e.messages), 400
 
-    # Find exact same item in inventory list
+    # Find exact same item in inventory list (item name is case insensitive)
     query = select(Inventory).where(Inventory.name == data['name'] and Inventory.price == data['price'])
     item = db.session.execute(query).scalars().all()
     
     if item:
-        return jsonify({'message':'Item already exists'})
+        return jsonify({'message':'Item already exists'}), 400
     
     # Create new item if not already in the inventory list
     new_item = Inventory(**data)
@@ -65,6 +66,7 @@ def update_item(mechanic_id, item_id):
     # Load and validate data
     try:
         data = inventory_schema.load(request.json)
+        data['name'] = data['name'].lower()
     except ValidationError as e:
         return jsonify(e.messages), 400
     
@@ -77,7 +79,8 @@ def update_item(mechanic_id, item_id):
     
     # Update item
     for key, value in data.items():
-        setattr(item, key, value)
+        if value:
+            setattr(item, key, value)
         
     db.session.commit()
     

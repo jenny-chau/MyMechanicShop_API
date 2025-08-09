@@ -13,7 +13,7 @@ from app.utils.util import encode_token, token_required_customer
 def customer_login():
     try:
         credentials = login_schema.load(request.json)
-        username = credentials['email']
+        username = credentials['email'].lower()
         password = credentials['password']
     except ValidationError as e:
         return jsonify(e.messages), 400
@@ -45,6 +45,9 @@ def create_customer():
         customer_data = customer_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
+    
+    # All email will be stored as lowercase strings
+    customer_data['email'] = customer_data['email'].lower()
     
     query = select(Customer).where(Customer.email == customer_data['email'])
     existing_customer = db.session.execute(query).scalars().all()
@@ -97,6 +100,8 @@ def update_customer(customer_id):
         customer_data = customer_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
+    
+    customer_data['email'] = customer_data['email'].lower()
     
     # Check if email is being used already
     query = select(Customer).where(Customer.email == customer_data["email"])

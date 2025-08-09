@@ -47,7 +47,7 @@ class Mechanic(Base):
     email: Mapped[str] = mapped_column(db.String(255), nullable=False, unique=True)
     phone: Mapped[str] = mapped_column(db.String(255), nullable=False)
     password: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    salary: Mapped[float]
+    salary: Mapped[float] = mapped_column(nullable=False)
     
     tickets: Mapped[List['ServiceTicket']] = db.relationship(secondary=service_mechanics, back_populates='mechanics')
     
@@ -56,7 +56,7 @@ class Inventory(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    price: Mapped[float]
+    price: Mapped[float] = mapped_column(nullable=False)
     
     service_tickets: Mapped[List['InventoryServiceTicket']] = db.relationship(back_populates='item', cascade='all, delete') # If item is deleted, entries in the 'InventoryServiceTicket' table will be deleted too
     

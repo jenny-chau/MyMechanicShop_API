@@ -12,7 +12,7 @@ from app.utils.util import encode_token, token_required_mechanic
 def login():
     try:
         data = login_schema.load(request.json)
-        username = data['email']
+        username = data['email'].lower()
         password = data['password']
     except ValidationError as e:
         return jsonify(e.messages), 400
@@ -41,6 +41,8 @@ def add_mechanic():
         mechanic = mechanic_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
+    
+    mechanic['email'] = mechanic['email'].lower()
     
     #Check for existing mechanic with same email
     query = select(Mechanic).where(Mechanic.email == mechanic['email'])
@@ -79,6 +81,8 @@ def update_mechanic(id):
         updates = mechanic_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
+    
+    updates['email'] = updates['email'].lower()
     
     #check for email duplicate
     query = select(Mechanic).where(Mechanic.email == updates['email'])
