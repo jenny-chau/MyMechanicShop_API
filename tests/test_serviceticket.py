@@ -52,6 +52,18 @@ class TestServiceTickets(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json['VIN'], ['Missing data for required field.'])
         
+    def test_string_too_long_create_ticket(self):
+        create_payload = {
+            'VIN': '123',
+            'service_date': '2025-08-10',
+            'service_desc': 'Tire rotation' * 100
+        }
+        
+        headers = {'Authorization': 'Bearer ' + self.customer_token}
+        response = self.client.post('/serviceticket/', json=create_payload, headers=headers)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json['service_desc'], ['Longer than maximum length 255.'])
+        
     def test_invalid_date_create_ticket(self):
         create_payload = {
             'VIN': '123',
@@ -75,6 +87,17 @@ class TestServiceTickets(unittest.TestCase):
         response = self.client.post('/serviceticket/', json=create_payload, headers=headers)
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json['error'], 'Invalid token')
+        
+    def test_missing_token_create_ticket(self):
+        create_payload = {
+            'VIN': '123',
+            'service_date': '08-23-2025',
+            'service_desc': 'Tire rotation'
+        }
+        
+        response = self.client.post('/serviceticket/', json=create_payload)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json['error'], 'Token not found')
 
     # Test assign logged in mechanic
     def test_assign_mechanic(self):
@@ -92,6 +115,13 @@ class TestServiceTickets(unittest.TestCase):
         response = self.client.put('/serviceticket/10/assign-mechanic', headers=headers)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json['error'], 'Service Ticket not found')
+        
+    def test_invalid_mechanic_assign_mechanic(self):
+        headers = {'Authorization': 'Bearer ' + self.mechanic_token}
+        self.client.delete('/mechanics/', headers=headers)
+        response = self.client.put('/serviceticket/1/assign-mechanic', headers=headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json['error'], 'Mechanic not found')
         
     # Test remove logged in mechanic
     def test_remove_mechanic(self):
@@ -112,6 +142,13 @@ class TestServiceTickets(unittest.TestCase):
     def test_invalid_ticket_remove_mechanic(self):
         headers = {'Authorization': 'Bearer ' + self.mechanic_token}
         response = self.client.put('/serviceticket/10/remove-mechanic', headers=headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json['error'], 'Service ticket or mechanic not found')
+        
+    def test_invalid_mechanic_remove_mechanic(self):
+        headers = {'Authorization': 'Bearer ' + self.mechanic_token}
+        self.client.delete('/mechanics/', headers=headers)
+        response = self.client.put('/serviceticket/1/remove-mechanic', headers=headers)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json['error'], 'Service ticket or mechanic not found')
         
@@ -300,3 +337,60 @@ class TestServiceTickets(unittest.TestCase):
         
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json['error'], 'Item not found')
+        
+    def test_invalid_quantity_add_items(self):
+        add_item_payload = {
+            'ticket_id': 1,
+            'item_quant': [
+                {
+                    'item_id': 1,
+                    'quantity': 2
+                },
+                {
+                    'item_id': 2,
+                    'quantity': -10 # invalid quanity, item should not get added to service ticket, but not error returned
+                }
+                ]
+        }
+        
+        headers = {'Authorization': 'Bearer ' + self.mechanic_token}
+        self.client.put('/serviceticket/1/assign-mechanic', headers=headers)
+        response = self.client.put('/serviceticket/add_items', json=add_item_payload, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json['items']), 1)
+        
+    # Test delete service ticket
+    def test_delete_ticket(self):
+        headers = {'Authorization': 'Bearer ' + self.mechanic_token}
+        headers_customer = {'Authorization': 'Bearer ' + self.customer_token}
+        self.client.put('/serviceticket/1/assign-mechanic', headers=headers)
+        
+        customer_json = self.client.get('/customers/my-tickets', headers=headers_customer)
+        self.assertEqual(len(customer_json.json), 1)
+        
+        response_after = self.client.delete('/serviceticket/1', headers=headers)
+        self.assertEqual(response_after.status_code, 200)
+        self.assertEqual(response_after.json['message'], 'Successfully deleted service ticket')
+        customer_json = self.client.get('/customers/my-tickets', headers=headers_customer)
+        self.assertEqual(len(customer_json.json), 0)
+        
+        
+    # delete non-existing ticket
+    def test_delete_ticket(self):
+        headers = {'Authorization': 'Bearer ' + self.mechanic_token}
+        self.client.put('/serviceticket/1/assign-mechanic', headers=headers)
+        self.client.delete('/serviceticket/1', headers=headers)
+        
+        response = self.client.delete('/serviceticket/1', headers=headers)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json['error'], 'Service Ticket not found')
+
+    # test invalid token delete ticket
+    def test_delete_ticket(self):
+        headers_valid = {'Authorization': 'Bearer ' + self.mechanic_token}
+        headers_invalid = {'Authorization': 'Bearer ' + self.customer_token}
+        self.client.put('/serviceticket/1/assign-mechanic', headers=headers_valid)
+        response = self.client.delete('/serviceticket/1', headers=headers_invalid)
+        
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json['error'], 'Invalid token')

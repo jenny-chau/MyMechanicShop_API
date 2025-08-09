@@ -185,3 +185,19 @@ def add_items(mechanic_id):
     db.session.commit()
     return service_ticket_schema.jsonify(ticket), 200    
     
+@service_ticket_bp.route('/<int:ticket_id>', methods=['DELETE'])
+@token_required_mechanic
+def delete_ticket(mechanic_id, ticket_id):
+    ticket = db.session.get(ServiceTicket, ticket_id)
+    if not ticket:
+        return jsonify({'error': 'Service Ticket not found'}), 404
+    
+    mechanic = db.session.get(Mechanic, mechanic_id)
+    if not mechanic:
+        return jsonify({'error': 'Unauthorized access'}), 400
+    
+    db.session.delete(ticket)
+    db.session.commit()
+    return jsonify({'message': 'Successfully deleted service ticket'}), 200
+    
+    
