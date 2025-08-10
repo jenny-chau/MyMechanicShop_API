@@ -14,7 +14,7 @@
 - Organized with Application Factory Pattern
 - Unittests provided
 - Swagger API documentation provided
-- API deployed on Render [here](https://mymechanicshop-api.onrender.com)
+- API deployed on Render [API documentation here](https://mymechanicshop-api.onrender.com/api/docs)
 - CI/CD pipeline using Github Actions workflows
 
 ## Models
