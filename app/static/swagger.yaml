@@ -82,14 +82,12 @@ paths:
           name: "page"
           description: "Page number to display of paginated customers"
           required: false
-          schema: 
-            type: "integer"
+          type: "integer"
         - in: "query"
           name: "per_page"
           description: "Number of customers per page for pagination"
           required: false
-          schema: 
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Retrieved all customers successfully"
@@ -166,8 +164,7 @@ paths:
           name: "customer_id"
           description: "Numeric ID to identify which customer to get"
           required: true
-          schema:
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Retrieved customer information successfully"
@@ -444,8 +441,7 @@ paths:
           name: "item_id"
           description: "Numeric ID to identify which item to get"
           required: true
-          schema: 
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Successfully retrieved item data"
@@ -469,8 +465,7 @@ paths:
           name: "item_id"
           description: "Numeric ID to identify which item to get"
           required: true
-          schema: 
-            type: "integer"
+          type: "integer"
         - in: "body"
           name: "body"
           description: "Updated item information"
@@ -500,8 +495,7 @@ paths:
           name: "item_id"
           description: "Numeric ID to identify which item to get"
           required: true
-          schema: 
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Successfully deleted item from the inventory"
@@ -607,8 +601,7 @@ paths:
           name: "ticket_id"
           description: "Numeric ID to identify the service ticket that should be modified."
           required: true
-          schema:
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Successfully added mechanic to service ticket"
@@ -631,8 +624,7 @@ paths:
           name: "ticket_id"
           description: "Numeric ID to identify the service ticket that should be modified."
           required: true
-          schema:
-            type: "integer"
+          type: "integer"
       responses:
         200:
           description: "Successfully removed mechanic from the service ticket"
@@ -655,8 +647,7 @@ paths:
           name: "ticket_id"
           description: "Numeric ID to identify which service ticket to get"
           required: true
-          schema:
-            type: "integer"
+          type: "integer"
         - in: "body"
           name: "body"
           description: "Mechanic IDs to add/remove"
@@ -771,8 +762,7 @@ paths:
           name: 'ticket_id'
           description: "Numeric ID to identify which service ticket to retrieve"
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
       responses:
         200:
           description: "Successfully deleted the service ticket"
