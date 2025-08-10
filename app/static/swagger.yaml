@@ -405,7 +405,7 @@ paths:
           examples:
             application/json:
               id: 1
-              name: "Wheels"
+              name: "wheels"
               price: 10.00
 
     get:
@@ -423,12 +423,12 @@ paths:
               [
                 {
                   id: 1,
-                  name: "Wheels",
+                  name: "wheels",
                   price: 10.00
                 },
                 {
                   id: 2,
-                  name: "Screws",
+                  name: "screws",
                   price: 1.00
                 }
               ]
@@ -454,7 +454,7 @@ paths:
           examples:
             application/json:
               id: 1
-              name: "Wheels"
+              name: "wheels"
               price: 1.00
 
     put:
@@ -485,7 +485,7 @@ paths:
           examples:
             application/json:
               id: 1
-              name: "Wheels"
+              name: "wheels"
               price: 2.00
 
     delete:
@@ -779,7 +779,8 @@ paths:
           schema: 
             $ref: '#/definitions/DeleteServiceTicketResponse'
           examples:
-            "message": "Successfully deleted service ticket"
+            application/json:
+              "message": "Successfully deleted service ticket"
 
 definitions:
   LoginCredentials:
