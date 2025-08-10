@@ -348,7 +348,7 @@ class TestServiceTickets(unittest.TestCase):
                 },
                 {
                     'item_id': 2,
-                    'quantity': -10 # invalid quanity, item should not get added to service ticket, but not error returned
+                    'quantity': -10 # invalid quantity, item should not get added to service ticket, but no error returned
                 }
                 ]
         }

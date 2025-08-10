@@ -12,6 +12,8 @@
 - Postman (API testing)
 - JWT tokens using python-jose package
 - Organized with Application Factory Pattern
+- Unittests provided
+- Swagger API documentation provided
 
 ## Models
 - Customer
@@ -51,6 +53,7 @@
     - GET '/serviceticket/': Retrieves all service tickets.
     - PUT '/serviceticket/<ticket_id>/edit' : Add/removes mechanics from service ticket. Takes in 'remove_ids', and 'add_ids'. Logged in mechanic may add/remove other mechanics by their ids passed in. (mechanic login required)
     - PUT '/serviceticket/add_items' : Add item to service ticket (mechanic login required)
+    - DELETE '/serviceticket/<ticket_id>': Delete service ticket (mechanic login required)
 - Mechanic routes
     - POST '/mechanics/login' : Mechanic login
     - POST '/mechanics/' : Creates a new Mechanic
