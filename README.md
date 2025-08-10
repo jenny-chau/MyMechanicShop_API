@@ -1,7 +1,7 @@
 # My Mechanic Shop API
 
 ## Project Overview
-- Build an API for a mechanic shop to store, access, and edit customer, mechanics, and service ticket information
+- Build an API for a mechanic shop to store, access, and edit customer, mechanics, inventory items, and service ticket information
 
 ## Programming Languages, Frameworks, Tools
 - Python
@@ -14,6 +14,8 @@
 - Organized with Application Factory Pattern
 - Unittests provided
 - Swagger API documentation provided
+- API deployed on Render [here](https://mymechanicshop-api.onrender.com)
+- CI/CD pipeline using Github Actions workflows
 
 ## Models
 - Customer
@@ -67,13 +69,3 @@
     - GET '/inventory/<item_id> : get item by id
     - PUT '/inventory/<item_id> : update item (mechanic login required)
     - DELETE '/inventory/<item_id>' : delete item (and all instances of this item in service tickets) (mechanic login required)
-
-## Getting Started
-1. Clone this Github repository
-2. Create a virtual environment
-3. In the virtual environment terminal, `pip install -r requirements.txt`
-4. Open MySQLWorkbench and add a connection. Create a database named "mymechanicshop". Edit line 2 of config.py with your MySQL connection username, password, and host (usually localhost)
-5. Open Postman and import "Mechanic Shop.postman_collection.json" to view all routes. Edit host and port if needed.
-6. Run "app.py"
-7. Start by creating a customer and a mechanic and continue
-8. Verify using MySQLWorkbench
