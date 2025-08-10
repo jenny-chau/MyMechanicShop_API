@@ -3,8 +3,9 @@ from jose import jwt
 from functools import wraps
 from flask import request, jsonify
 import jose
+import os
 
-SECRET_KEY = 'DiN0SaUr'
+SECRET_KEY = os.environ.get('SECRET_KEY') or 'Secret_key'
 
 # Encode token when customer or mechanic logs in. Encodes extra piece of information for whether they are customer or mechanic.
 def encode_token(customer_id, customer_or_mechanic):

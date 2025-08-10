@@ -1,3 +1,5 @@
+import os
+
 class DevelopmentConfig:
     SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://root:mysqlrootuser@localhost/mymechanicshop'
     DEBUG = True
@@ -5,7 +7,8 @@ class DevelopmentConfig:
     CACHE_DEFAULT_TIMEOUT = 300
     
 class ProductionConfig:
-    pass
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    CACHE_TYPE = 'SimpleCache'
 
 class TestingConfig:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///testing.db'
